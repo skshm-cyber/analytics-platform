@@ -1005,11 +1005,23 @@ function loadAll() {
   var p = dateParams();
   var base = '?site_id=' + state.siteId + p;
 
+  // Critical: top cards + charts (render first)
   Promise.all([
     api('/api/stats/overview' + base),
     api('/api/stats/secondary' + base),
     api('/api/stats/hourly' + base),
-    api('/api/stats/trends' + base),
+    api('/api/stats/trends' + base)
+  ]).then(function(r) {
+    renderOverview(r[0]);
+    renderSecondary(r[1]);
+    renderHourly(r[2]);
+    renderTrends(r[3]);
+  }).catch(function(e) {
+    console.error('Failed to load critical stats:', e);
+  });
+
+  // Deferred: tables, events, geography (render after)
+  Promise.all([
     api('/api/stats/pages' + base + '&limit=10'),
     api('/api/stats/referrers' + base + '&limit=10'),
     api('/api/stats/devices' + base),
@@ -1023,24 +1035,20 @@ function loadAll() {
     api('/api/stats/live' + base),
     api('/api/stats/events' + base + '&limit=30')
   ]).then(function(r) {
-    renderOverview(r[0]);
-    renderSecondary(r[1]);
-    renderHourly(r[2]);
-    renderTrends(r[3]);
-    renderPages(r[4]);
-    renderReferrers(r[5]);
-    renderDevices(r[6]);
-    renderBrowsers(r[7]);
-    renderOS(r[8]);
-    renderCountries(r[9]);
-    renderCampaigns(r[10]);
-    renderFunnel(r[11]);
-    renderEventsSummary(r[12]);
-    renderProducts(r[13]);
-    renderLive(r[14]);
-    renderActivity(r[15]);
+    renderPages(r[0]);
+    renderReferrers(r[1]);
+    renderDevices(r[2]);
+    renderBrowsers(r[3]);
+    renderOS(r[4]);
+    renderCountries(r[5]);
+    renderCampaigns(r[6]);
+    renderFunnel(r[7]);
+    renderEventsSummary(r[8]);
+    renderProducts(r[9]);
+    renderLive(r[10]);
+    renderActivity(r[11]);
   }).catch(function(e) {
-    console.error('Failed to load stats:', e);
+    console.error('Failed to load deferred stats:', e);
   });
 }
 
@@ -1481,12 +1489,14 @@ function timeAgo(iso) {
 /* ─── Auto-refresh ─── */
 function startAutoRefresh() {
   if (state.refreshTimer) clearInterval(state.refreshTimer);
+  var isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  var interval = isMobile ? 60000 : 30000;
   state.refreshTimer = setInterval(function() {
     loadAll();
     var ind = document.getElementById('refreshIndicator');
     ind.classList.add('show');
     setTimeout(function() { ind.classList.remove('show'); }, 1500);
-  }, 30000);
+  }, interval);
 }
 
 /* ─── Logout ─── */
