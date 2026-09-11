@@ -1434,11 +1434,12 @@ function runVerify() {
 
     if (d.site) {
       var workerUrl = 'https://analytics-platform.tewarisaksham20.workers.dev';
-      var snippet = '<script src="' + workerUrl + '/tracker.js" data-site-key="' + d.site.site_key + '" data-api-url="' + workerUrl + '"><\/script>';
+      var rawSnippet = '<script src="' + workerUrl + '/tracker.js" data-site-key="' + d.site.site_key + '" data-api-url="' + workerUrl + '"><' + '/script>';
+      var safeSnippet = rawSnippet.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       html += '<div class="verify-script">';
       html += '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Paste this in your website\'s <code>&lt;head&gt;</code>:</div>';
-      html += '<pre>' + snippet + '</pre>';
-      html += '<div class="verify-copy" onclick="copySnippet(this)">Copy to Clipboard</div>';
+      html += '<pre id="verifySnippet">' + safeSnippet + '</pre>';
+      html += '<div class="verify-copy" onclick="copySnippet(this)" data-raw="' + rawSnippet.replace(/"/g, '&quot;') + '">Copy to Clipboard</div>';
       html += '</div>';
     }
 
@@ -1453,9 +1454,12 @@ function runVerify() {
 }
 
 function copySnippet(el) {
-  var pre = el.previousElementSibling;
-  var text = pre.textContent;
-  navigator.clipboard.writeText(text).then(function() {
+  var raw = el.getAttribute('data-raw');
+  if (!raw) {
+    var pre = el.previousElementSibling;
+    raw = pre.textContent;
+  }
+  navigator.clipboard.writeText(raw).then(function() {
     el.textContent = 'Copied!';
     setTimeout(function() { el.textContent = 'Copy to Clipboard'; }, 2000);
   });
