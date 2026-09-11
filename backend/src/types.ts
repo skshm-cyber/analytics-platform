@@ -1,0 +1,63 @@
+export interface Env {
+  DB: D1Database;
+  JWT_SECRET: string;
+  CORS_ORIGINS: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  is_admin: number;
+}
+
+export interface TrackPayload {
+  site_key: string;
+  visitor_id: string;
+  session_id: string;
+  timestamp: string;
+  timezone?: string;
+  language?: string;
+  browser?: string;
+  browser_version?: string;
+  os?: string;
+  device_type?: string;
+  screen_width?: number;
+  screen_height?: number;
+  page_url: string;
+  referrer?: string;
+  page_title?: string;
+  is_first_visit?: number;
+  scroll_percentage?: number;
+  time_on_page?: number;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+}
+
+export interface EventPayload {
+  site_key: string;
+  visitor_id: string;
+  session_id: string;
+  timestamp: string;
+  event_type: string;
+  event_target?: string;
+  page_url?: string;
+  time_on_page?: number;
+  scroll_percentage?: number;
+  browser?: string;
+  os?: string;
+  device_type?: string;
+  properties?: Record<string, unknown>;
+}
+
+export interface Site {
+  id: string;
+  user_id: string;
+  name: string;
+  url: string;
+  site_key: string;
+  is_active: number;
+  created_at: string;
+}

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Started — Analytics Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:#09090b;color:#fafafa;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;line-height:1.5}
+  .container{width:100%;max-width:480px}
+  .header{text-align:center;margin-bottom:2.5rem}
+  .header h1{font-size:1.5rem;font-weight:700;margin-bottom:.25rem}
+  .header p{color:#a1a1aa;font-size:.875rem}
+  .steps{display:flex;gap:.5rem;justify-content:center;margin-bottom:2rem}
+  .step-dot{width:2rem;height:.25rem;border-radius:9999px;background:rgba(255,255,255,.08);transition:background .3s}
+  .step-dot.active{background:#8b5cf6}
+  .step-dot.done{background:#22c55e}
+  .card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:.75rem;padding:2rem}
+  .step{display:none}
+  .step.visible{display:block}
+  .step h2{font-size:1.125rem;font-weight:600;margin-bottom:.25rem}
+  .step .subtitle{color:#a1a1aa;font-size:.8125rem;margin-bottom:1.5rem}
+  label{display:block;font-size:.8125rem;font-weight:500;margin-bottom:.375rem;color:#a1a1aa}
+  input[type="text"],input[type="url"]{width:100%;padding:.625rem .75rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:.5rem;color:#fafafa;font-size:.875rem;font-family:inherit;outline:none;transition:border-color .2s}
+  input:focus{border-color:#8b5cf6}
+  input::placeholder{color:#52525b}
+  .field+{margin-bottom:1rem}
+  .btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:.625rem 1rem;border:none;border-radius:.5rem;font-family:inherit;font-size:.875rem;font-weight:500;cursor:pointer;transition:opacity .2s,background .2s}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{background:#8b5cf6;color:#fff}
+  .btn-primary:hover:not(:disabled){background:#7c3aed}
+  .btn-secondary{background:rgba(255,255,255,.06);color:#fafafa;border:1px solid rgba(255,255,255,.1)}
+  .btn-secondary:hover:not(:disabled){background:rgba(255,255,255,.1)}
+  .btn-success{background:#22c55e;color:#fff}
+  .btn-success:hover:not(:disabled){background:#16a34a}
+  .btn-group{display:flex;flex-direction:column;gap:.625rem;margin-top:1.5rem}
+  .code-block{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:1rem;margin:.75rem 0;overflow-x:auto}
+  .code-block code{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:.8125rem;color:#a78bfa;white-space:pre}
+  .copy-row{display:flex;gap:.5rem;align-items:center}
+  .copy-row .btn{width:auto;flex-shrink:0}
+  .hint{font-size:.75rem;color:#52525b;margin-top:.5rem}
+  .status{display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-radius:.5rem;font-size:.8125rem;margin-top:1rem}
+  .status.success{background:rgba(34,197,94,.08);color:#22c55e;border:1px solid rgba(34,197,94,.15)}
+  .status.waiting{background:rgba(250,204,21,.08);color:#facc15;border:1px solid rgba(250,204,21,.15)}
+  .spinner{width:1rem;height:1rem;border:2px solid rgba(255,255,255,.1);border-top-color:#8b5cf6;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-msg{color:#ef4444;font-size:.75rem;margin-top:.375rem;display:none}
+  .loading-screen{display:flex;align-items:center;justify-content:center;min-height:50vh}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="loading" class="loading-screen"><div class="spinner" style="width:1.5rem;height:1.5rem"></div></div>
+
+  <div id="app" style="display:none">
+    <div class="header">
+      <h1>Welcome to Analytics</h1>
+      <p>Set up tracking in three quick steps</p>
+    </div>
+    <div class="steps">
+      <div class="step-dot active" id="dot1"></div>
+      <div class="step-dot" id="dot2"></div>
+      <div class="step-dot" id="dot3"></div>
+    </div>
+    <div class="card">
+
+      <!-- Step 1 -->
+      <div class="step visible" id="step1">
+        <h2>Add Your Website</h2>
+        <p class="subtitle">Tell us about the site you want to track.</p>
+        <label for="siteName">Website Name</label>
+        <input type="text" id="siteName" placeholder="e.g. My Store" autocomplete="off">
+        <div class="error-msg" id="nameErr">Please enter a name</div>
+        <div style="height:1rem"></div>
+        <label for="siteUrl">Website URL</label>
+        <input type="url" id="siteUrl" placeholder="e.g. https://mystore.com" autocomplete="off">
+        <div class="error-msg" id="urlErr">Please enter a valid URL</div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnContinue" onclick="submitStep1()">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" id="step2">
+        <h2>Install Tracking Script</h2>
+        <p class="subtitle">Add this snippet to the &lt;head&gt; of every page on your website.</p>
+        <div class="code-block"><code id="snippet"></code></div>
+        <div class="copy-row">
+          <button class="btn btn-secondary" onclick="copySnippet()">Copy to Clipboard</button>
+          <span id="copyStatus" style="font-size:.75rem;color:#22c55e;display:none">Copied!</span>
+        </div>
+        <p class="hint" style="margin-top:1rem">Paste the code into your HTML &lt;head&gt; section, before the closing &lt;/head&gt; tag.</p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="goStep3()">I've Installed It</button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" id="step3">
+        <h2>You're All Set!</h2>
+        <p class="subtitle">We're checking if your site is sending data.</p>
+        <div id="verifyStatus" style="display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border-radius:.5rem;font-size:.8125rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+          <div class="spinner"></div>
+          <span>Checking for events...</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnDashboard" style="display:none" onclick="goDashboard()">Open Dashboard</button>
+          <button class="btn btn-secondary" id="btnRetry" style="display:none" onclick="checkEvents()">Check Again</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let siteData = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, { credentials: 'include', ...opts });
+  if (res.status === 401) { window.location.href = '/login.html'; throw new Error('unauthorized'); }
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Request failed');
+  return json;
+}
+
+async function init() {
+  try {
+    const me = await api('/api/auth/me');
+    const { sites } = await api('/api/sites');
+    if (sites && sites.length > 0) {
+      window.location.href = '/dashboard.html?site_id=' + sites[0].id;
+      return;
+    }
+  } catch (e) {
+    if (e.message === 'unauthorized') return;
+  }
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function setStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('visible'));
+  document.getElementById('step' + n).classList.add('visible');
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.classList.remove('active', 'done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+  }
+}
+
+function showError(id, show) {
+  document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+async function submitStep1() {
+  const name = document.getElementById('siteName').value.trim();
+  const url = document.getElementById('siteUrl').value.trim();
+  let valid = true;
+
+  if (!name) { showError('nameErr', true); valid = false; } else showError('nameErr', false);
+
+  if (!url || !/^https?:\/\/.+\..+/.test(url)) { showError('urlErr', true); valid = false; } else showError('urlErr', false);
+
+  if (!valid) return;
+
+  const btn = document.getElementById('btnContinue');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:.875rem;height:.875rem;border-width:1.5px"></div>';
+
+  try {
+    siteData = await api('/api/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, url })
+    });
+
+    const workerUrl = API;
+    const snippet = '<script src="' + workerUrl + '/tracker.js" data-site-key="' + siteData.site_key + '" data-api-url="' + workerUrl + '"><\/script>';
+    document.getElementById('snippet').textContent = snippet;
+
+    setStep(2);
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Continue';
+  }
+}
+
+function copySnippet() {
+  const text = document.getElementById('snippet').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const s = document.getElementById('copyStatus');
+    s.style.display = 'inline';
+    setTimeout(() => s.style.display = 'none', 2000);
+  });
+}
+
+function goStep3() {
+  setStep(3);
+  checkEvents();
+}
+
+async function checkEvents() {
+  const status = document.getElementById('verifyStatus');
+  status.innerHTML = '<div class="spinner"></div><span>Checking for events...</span>';
+  status.style.background = 'rgba(255,255,255,.03)';
+  status.style.borderColor = 'rgba(255,255,255,.06)';
+  status.style.color = '#fafafa';
+  document.getElementById('btnDashboard').style.display = 'none';
+  document.getElementById('btnRetry').style.display = 'none';
+
+  try {
+    const data = await api('/api/stats/overview?site_id=' + siteData.id);
+    const total = (data.page_views_today || 0) + (data.sessions_today || 0);
+
+    if (total > 0) {
+      status.innerHTML = '<span style="font-size:1rem">✓</span> Tracking is active! Your data is flowing.';
+      status.className = 'status success';
+      document.getElementById('btnDashboard').style.display = 'inline-flex';
+    } else {
+      status.innerHTML = '<span style="font-size:1rem">⏳</span> Waiting for data... Make sure the script is installed correctly.';
+      status.className = 'status waiting';
+      document.getElementById('btnRetry').style.display = 'inline-flex';
+    }
+  } catch (e) {
+    status.innerHTML = '<span style="font-size:1rem">⏳</span> Waiting for data... Make sure the script is installed correctly.';
+    status.className = 'status waiting';
+    document.getElementById('btnRetry').style.display = 'inline-flex';
+  }
+}
+
+function goDashboard() {
+  window.location.href = '/dashboard.html?site_id=' + siteData.id;
+}
+
+init();
+</script>
+</body>
+</html>
