@@ -484,6 +484,52 @@
       color: var(--text-muted);
     }
 
+    /* ─── Verify panel ─── */
+    .btn-verify {
+      padding: 5px 14px; border-radius: 6px;
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.25);
+      color: var(--accent); font-family: var(--sans);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-verify:hover { background: rgba(139,92,246,0.2); }
+    .btn-verify:disabled { opacity: 0.5; cursor: not-allowed; }
+    .verify-loading { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
+    .verify-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+    }
+    .verify-status.active { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); color: #22c55e; }
+    .verify-status.idle { background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.2); color: #eab308; }
+    .verify-status.stale { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2); color: #f97316; }
+    .verify-status.no_data { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; }
+    .verify-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .verify-status.active .verify-dot { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .verify-status.idle .verify-dot { background: #eab308; }
+    .verify-status.stale .verify-dot { background: #f97316; }
+    .verify-status.no_data .verify-dot { background: #ef4444; }
+    .verify-detail { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+    .verify-script {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px; padding: 12px 16px; margin-top: 8px;
+    }
+    .verify-script pre {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+      color: var(--text-dim); white-space: pre-wrap; word-break: break-all;
+      margin: 0; line-height: 1.6;
+    }
+    .verify-copy {
+      display: inline-block; margin-top: 8px;
+      padding: 4px 12px; border-radius: 5px;
+      background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.2);
+      color: var(--accent); font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .verify-copy:hover { background: rgba(139,92,246,0.2); }
+    .verify-count { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
     /* ─── Responsive header ─── */
     @media (max-width: 600px) {
       .header-center { display: none; }
@@ -635,6 +681,17 @@
           </svg>
         </div>
         <div class="trend-labels" id="trendLabels"></div>
+      </div>
+    </div>
+
+    <!-- Tracker Verification -->
+    <div class="chart-card" id="verifyCard" style="margin-bottom:16px;">
+      <div class="chart-header">
+        <span class="chart-title">Tracker Status</span>
+        <button class="btn-verify" id="verifyBtn" onclick="runVerify()">Check Status</button>
+      </div>
+      <div id="verifyResult" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="verify-loading">Click "Check Status" to verify your tracker is working.</div>
       </div>
     </div>
 
@@ -871,6 +928,7 @@ function init() {
     }
     selectSite(state.siteId);
     loadAll();
+    runVerify();
     startAutoRefresh();
   }).catch(function(e) {
     if (e.message === 'unauthorized') {
@@ -896,11 +954,13 @@ function populateSiteDropdown() {
     selectSite(this.value);
     selM.value = this.value;
     loadAll();
+    runVerify();
   });
   selM.addEventListener('change', function() {
     selectSite(this.value);
     sel.value = this.value;
     loadAll();
+    runVerify();
   });
 }
 
@@ -1350,6 +1410,54 @@ function renderActivity(d) {
       + '<span class="activity-page">' + shortPage + '</span>'
       + '<span class="activity-time">' + timeAgo(ev.timestamp) + '</span>';
     feed.appendChild(el);
+  });
+}
+
+/* ─── Tracker verification ─── */
+function runVerify() {
+  if (!state.siteId) return;
+  var btn = document.getElementById('verifyBtn');
+  var result = document.getElementById('verifyResult');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  result.innerHTML = '<div class="verify-loading">Checking tracker status…</div>';
+
+  api('/api/stats/verify?site_id=' + state.siteId).then(function(d) {
+    var html = '';
+    html += '<div class="verify-status ' + d.status + '">';
+    html += '<div class="verify-dot"></div>';
+    html += '<div><div>' + d.detail + '</div>';
+    if (d.total_page_views > 0) {
+      html += '<div class="verify-count">' + d.total_page_views.toLocaleString() + ' total page views recorded</div>';
+    }
+    html += '</div></div>';
+
+    if (d.site) {
+      var workerUrl = 'https://analytics-platform.tewarisaksham20.workers.dev';
+      var snippet = '<script src="' + workerUrl + '/tracker.js" data-site-key="' + d.site.site_key + '" data-api-url="' + workerUrl + '"><\/script>';
+      html += '<div class="verify-script">';
+      html += '<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Paste this in your website\'s <code>&lt;head&gt;</code>:</div>';
+      html += '<pre>' + snippet + '</pre>';
+      html += '<div class="verify-copy" onclick="copySnippet(this)">Copy to Clipboard</div>';
+      html += '</div>';
+    }
+
+    result.innerHTML = html;
+    btn.disabled = false;
+    btn.textContent = 'Check Status';
+  }).catch(function(e) {
+    result.innerHTML = '<div class="verify-status no_data"><div class="verify-dot"></div><div>Failed to check status: ' + e.message + '</div></div>';
+    btn.disabled = false;
+    btn.textContent = 'Check Status';
+  });
+}
+
+function copySnippet(el) {
+  var pre = el.previousElementSibling;
+  var text = pre.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    el.textContent = 'Copied!';
+    setTimeout(function() { el.textContent = 'Copy to Clipboard'; }, 2000);
   });
 }
 

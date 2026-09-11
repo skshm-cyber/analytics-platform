@@ -1,5 +1,5 @@
 import { Env } from "../types";
-import { d1Query } from "../services/d1";
+import { d1Query, d1QueryOne } from "../services/d1";
 import { jsonResponse, errorResponse } from "../middleware/cors";
 import { getWindow, istDateStr, istHour } from "../utils/time";
 
@@ -558,4 +558,58 @@ export async function handleCities(
   );
 
   return jsonResponse(env, { cities }, 200, origin);
+}
+
+// ── GET /api/stats/verify ────────────────────────────────────────────────────
+// Verify tracker is receiving data for a site.
+
+export async function handleVerify(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const origin = request.headers.get("Origin");
+  const url = new URL(request.url);
+  const site_id = getSiteId(url);
+  if (!site_id) return errorResponse(env, "site_id required", 400, origin);
+
+  const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const oneDayAgo = new Date(Date.now() - 86400_000).toISOString();
+  const allTime = "2000-01-01T00:00:00Z";
+
+  const [recentPV, dayPV, totalPV, recentEvents, site] = await Promise.all([
+    d1Query(env.DB, "SELECT id FROM page_views WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneHourAgo),
+    d1Query(env.DB, "SELECT id FROM page_views WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneDayAgo),
+    d1Query(env.DB, "SELECT COUNT(*) as cnt FROM page_views WHERE site_id = ?", site_id),
+    d1Query(env.DB, "SELECT id FROM events WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneHourAgo),
+    d1QueryOne<{ site_key: string; url: string; name: string }>(env.DB, "SELECT site_key, url, name FROM sites WHERE id = ?", site_id),
+  ]);
+
+  const hasRecent = recentPV.length > 0;
+  const hasToday = dayPV.length > 0;
+  const totalCount = (totalPV[0] as any)?.cnt || 0;
+  const hasRecentEvent = recentEvents.length > 0;
+
+  let status: string;
+  let detail: string;
+  if (hasRecent) {
+    status = "active";
+    detail = "Tracker is working! Data received in the last hour.";
+  } else if (hasToday) {
+    status = "idle";
+    detail = "Tracker received data today but nothing in the last hour.";
+  } else if (totalCount > 0) {
+    status = "stale";
+    detail = "Tracker has historical data but nothing recently. Check if the script is still installed.";
+  } else {
+    status = "no_data";
+    detail = "No data received yet. Make sure the tracking script is installed on your website.";
+  }
+
+  return jsonResponse(env, {
+    status,
+    detail,
+    total_page_views: totalCount,
+    has_recent_event: hasRecentEvent,
+    site: site ? { name: site.name, url: site.url, site_key: site.site_key } : null,
+  }, 200, origin);
 }

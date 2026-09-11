@@ -21,6 +21,7 @@ import {
   handleDaily,
   handleCountries,
   handleCities,
+  handleVerify,
 } from "./routes/analytics";
 import {
   handleProducts,
@@ -53,23 +54,6 @@ export default {
 
     // ── Router ──────────────────────────────────────────────────────────────
     try {
-      // ── Tracker: serve the JS file ────────────────────────────────────────
-      if (path === "/tracker.js" && method === "GET") {
-        const script = await fetch(new URL("../tracker/tracker.js", (import.meta as any).url).href).catch(() => null);
-        if (script && script.ok) {
-          const content = await script.text();
-          return new Response(content, {
-            status: 200,
-            headers: {
-              "Content-Type": "application/javascript; charset=utf-8",
-              "Cache-Control": "public, max-age=3600",
-              ...corsHeaders(env, origin),
-            },
-          });
-        }
-        return errorResponse(env, "Tracker not found", 404, origin);
-      }
-
       // ── Auth ──────────────────────────────────────────────────────────────
       if (path === "/api/auth/signup" && method === "POST") {
         return await handleSignup(request, env);
@@ -159,6 +143,9 @@ export default {
       }
       if (path === "/api/stats/cities" && method === "GET") {
         return await handleCities(request, env);
+      }
+      if (path === "/api/stats/verify" && method === "GET") {
+        return await handleVerify(request, env);
       }
       if (path === "/api/stats/products" && method === "GET") {
         return await handleProducts(request, env);
