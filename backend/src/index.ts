@@ -178,13 +178,36 @@ export default {
         return jsonResponse(env, { status: "healthy", service: "analytics-platform-api" }, 200, origin);
       }
 
-      // ── Root ──────────────────────────────────────────────────────────────
-      if (path === "/") {
-        return jsonResponse(env, {
-          service: "Analytics Platform API",
-          version: "1.0.0",
-          health: "/health",
-        }, 200, origin);
+      // ── Serve frontend HTML files via ASSETS binding ──────────────────────
+      const frontendPages: Record<string, string> = {
+        "/": "/index.html",
+        "/index.html": "/index.html",
+        "/login.html": "/login.html",
+        "/signup.html": "/signup.html",
+        "/onboarding.html": "/onboarding.html",
+        "/dashboard.html": "/dashboard.html",
+        "/admin.html": "/admin.html",
+      };
+
+      if (frontendPages[path]) {
+        try {
+          const assetResp = await env.ASSETS.fetch(new URL(`https://assets${frontendPages[path]}`));
+          if (assetResp.ok) {
+            return assetResp;
+          }
+        } catch (e) {
+          console.error("Failed to serve frontend asset:", e);
+        }
+      }
+
+      // ── Try ASSETS for any unmatched route (static files) ────────────────
+      try {
+        const assetResp = await env.ASSETS.fetch(new URL(`https://assets${path}`));
+        if (assetResp.ok) {
+          return assetResp;
+        }
+      } catch (e) {
+        // Not a static asset, continue
       }
 
       return errorResponse(env, "Not Found", 404, origin);

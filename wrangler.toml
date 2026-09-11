@@ -3,7 +3,13 @@ main = "backend/src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
+[assets]
+directory = "frontend"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "analytics-platform-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "954433cb-3909-4b76-8c20-43eb17f44393"

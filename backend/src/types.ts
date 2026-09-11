@@ -2,6 +2,7 @@ export interface Env {
   DB: D1Database;
   JWT_SECRET: string;
   CORS_ORIGINS: string;
+  ASSETS: Fetcher;
 }
 
 export interface AuthUser {
