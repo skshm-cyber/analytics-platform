@@ -3,7 +3,7 @@ import { corsHeaders, jsonResponse, errorResponse } from "./middleware/cors";
 import { checkRateLimit } from "./middleware/rateLimit";
 import { handleTrack } from "./routes/track";
 import { handleEvent, handleEventBatch } from "./routes/event";
-import { handleSignup, handleLogin, handleLogout, handleMe } from "./routes/auth";
+import { handleSignup, handleLogin, handleLogout, handleMe, handleForgotPassword, handleResetPassword, handleGoogleAuth, handleGoogleCallback, handleGithubAuth, handleGithubCallback } from "./routes/auth";
 import { handleCreateSite, handleListSites, handleGetSite, handleGetScript } from "./routes/sites";
 import {
   handleOverview,
@@ -66,6 +66,24 @@ export default {
       }
       if (path === "/api/auth/me" && method === "GET") {
         return await handleMe(request, env);
+      }
+      if (path === "/api/auth/forgot-password" && method === "POST") {
+        return await handleForgotPassword(request, env);
+      }
+      if (path === "/api/auth/reset-password" && method === "POST") {
+        return await handleResetPassword(request, env);
+      }
+      if (path === "/api/auth/google" && method === "GET") {
+        return await handleGoogleAuth(request, env);
+      }
+      if (path === "/api/auth/google/callback" && method === "GET") {
+        return await handleGoogleCallback(request, env);
+      }
+      if (path === "/api/auth/github" && method === "GET") {
+        return await handleGithubAuth(request, env);
+      }
+      if (path === "/api/auth/github/callback" && method === "GET") {
+        return await handleGithubCallback(request, env);
       }
 
       // ── Sites ─────────────────────────────────────────────────────────────
@@ -174,6 +192,8 @@ export default {
         "/onboarding.html": "/onboarding.html",
         "/dashboard.html": "/dashboard.html",
         "/admin.html": "/admin.html",
+        "/forgot-password.html": "/forgot-password.html",
+        "/reset-password.html": "/reset-password.html",
       };
 
       if (frontendPages[path]) {
