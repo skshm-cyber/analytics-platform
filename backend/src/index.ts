@@ -38,7 +38,7 @@ import {
 } from "./routes/admin";
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -222,15 +222,81 @@ export default {
         "/reset-password.html": "/reset-password.html",
       };
 
+      const INSIGHTLY_SITE_ID = "insightly-platform-site";
+      const PAGE_NAMES: Record<string, string> = {
+        "/": "Home",
+        "/index.html": "Home",
+        "/login.html": "Login",
+        "/signup.html": "Signup",
+        "/onboarding.html": "Onboarding",
+        "/dashboard.html": "Dashboard",
+        "/admin.html": "Admin Panel",
+        "/admin": "Admin Panel",
+        "/forgot-password.html": "Forgot Password",
+        "/reset-password.html": "Reset Password",
+      };
+
       if (frontendPages[path]) {
         try {
           const assetResp = await env.ASSETS.fetch(new URL(`https://assets${frontendPages[path]}`));
-          if (assetResp.ok) {
-            return assetResp;
-          }
+          return assetResp;
         } catch (e) {
           console.error("Failed to serve frontend asset:", e);
         }
+      }
+
+      // ── Self-tracking endpoint ────────────────────────────────────────────
+      if (path === "/px.gif" && method === "GET") {
+        const cookieHeader = request.headers.get("Cookie") || "";
+        let pid = cookieHeader.match(/pid=([^;]+)/)?.[1];
+        if (!pid) pid = crypto.randomUUID();
+        const sid = crypto.randomUUID();
+        const pageUrl = url.searchParams.get("u") || request.headers.get("Referer") || url.href;
+        const referrer = url.searchParams.get("r") || "";
+        const pageTitle = PAGE_NAMES[new URL(pageUrl, "https://x").pathname] || "Insightly";
+        const now = new Date().toISOString();
+        const cfCountry = request.headers.get("CF-IPCountry") || "";
+
+        ctx.waitUntil(
+          Promise.all([
+            env.DB.prepare(
+              "INSERT INTO page_views (id, site_id, visitor_id, session_id, timestamp, page_url, page_title, referrer, is_first_visit, scroll_percentage, time_on_page, utm_source, utm_medium, utm_campaign, utm_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ).bind(
+              crypto.randomUUID(), INSIGHTLY_SITE_ID, pid, sid, now,
+              pageUrl, pageTitle, referrer, 1, 0, 0, "", "", "", ""
+            ).run(),
+
+            env.DB.prepare(
+              "INSERT INTO sessions (id, site_id, session_id, visitor_id, started_at, entry_page, exit_page, page_count, is_bounce, referrer, utm_source, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ).bind(
+              crypto.randomUUID(), INSIGHTLY_SITE_ID, sid, pid, now,
+              pageUrl, pageUrl, 1, 1, referrer, "", ""
+            ).run(),
+
+            cfCountry && cfCountry !== "XX" && cfCountry !== "T1"
+              ? env.DB.prepare(
+                  "INSERT INTO locations (id, page_view_id, country, city, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)"
+                ).bind(crypto.randomUUID(), pid, cfCountry, "", null, null).run()
+              : Promise.resolve(),
+          ]).catch(() => {})
+        );
+
+        // Return 1x1 transparent GIF with Set-Cookie
+        const gif = new Uint8Array([
+          0x47,0x49,0x46,0x38,0x39,0x61,0x01,0x00,0x01,0x00,0x80,0x00,0x00,
+          0xff,0xff,0xff,0x00,0x00,0x00,0x21,0xf9,0x04,0x01,0x00,0x00,0x00,
+          0x00,0x2c,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x02,0x02,
+          0x44,0x01,0x00,0x3b
+        ]);
+        return new Response(gif, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/gif",
+            "Cache-Control": "no-store",
+            "Access-Control-Allow-Origin": "*",
+            "Set-Cookie": `pid=${pid}; Path=/; Max-Age=${7 * 24 * 3600}; SameSite=Lax`,
+          },
+        });
       }
 
       // ── Try ASSETS for any unmatched route (static files) ────────────────

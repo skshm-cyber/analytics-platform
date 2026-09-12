@@ -309,6 +309,31 @@
       </div>
     </div>
 
+    <!-- Insightly Website Traffic (self-tracked) -->
+    <div class="section-card" style="margin-bottom:16px;border-color:rgba(139,92,246,0.2);">
+      <h2 style="margin-bottom:12px;">🔍 Insightly Website Traffic</h2>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+        <div>
+          <div style="font-size:28px;font-weight:700;color:var(--accent);" id="platPV">—</div>
+          <div style="font-size:11px;color:var(--text-muted);">Page Views</div>
+        </div>
+        <div>
+          <div style="font-size:28px;font-weight:700;color:var(--teal);" id="platVisitors">—</div>
+          <div style="font-size:11px;color:var(--text-muted);">Unique Visitors</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;">Pages Visited</div>
+          <div id="platPages"></div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;">Daily Views (last 30d)</div>
+          <div id="platDaily"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-grid">
       <!-- Users Table -->
       <div class="section-card">
@@ -470,6 +495,38 @@ function loadAdminStats() {
           + '<td>' + shortDate(s.created_at) + '</td>';
         sbody.appendChild(tr);
       });
+    }
+
+    // Platform self-tracking
+    if (d.platform) {
+      document.getElementById('platPV').textContent = fmt(d.platform.page_views);
+      document.getElementById('platVisitors').textContent = fmt(d.platform.visitors);
+      var pPages = document.getElementById('platPages');
+      var pages = d.platform.pages || [];
+      if (pages.length === 0) { pPages.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No data yet</div>'; }
+      else {
+        pPages.innerHTML = '';
+        pages.forEach(function(p) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.03);';
+          row.innerHTML = '<span style="color:var(--text-dim);">' + (p.page_title || 'Unknown') + '</span>'
+            + '<span style="font-weight:600;color:var(--accent);">' + fmt(p.cnt) + '</span>';
+          pPages.appendChild(row);
+        });
+      }
+      var pDaily = document.getElementById('platDaily');
+      var daily = d.platform.daily || [];
+      if (daily.length === 0) { pDaily.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">No data yet</div>'; }
+      else {
+        pDaily.innerHTML = '';
+        daily.slice(0, 14).forEach(function(d) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.03);';
+          row.innerHTML = '<span style="color:var(--text-dim);">' + d.day + '</span>'
+            + '<span style="font-weight:600;color:var(--teal);">' + fmt(d.cnt) + '</span>';
+          pDaily.appendChild(row);
+        });
+      }
     }
   }).catch(function(e) {
     console.error('Failed to load admin stats:', e);

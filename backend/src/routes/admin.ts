@@ -3,6 +3,8 @@ import { d1Query, d1QueryOne } from "../services/d1";
 import { jsonResponse, errorResponse } from "../middleware/cors";
 import { getUser } from "../middleware/auth";
 
+const INSIGHTLY_SITE_ID = "insightly-platform-site";
+
 /**
  * GET /api/admin/stats — Platform-wide stats (admin only)
  */
@@ -25,6 +27,11 @@ export async function handleAdminStats(
     activeSites,
     recentUsers,
     recentSites,
+    // Insightly platform site stats
+    platformPageViews,
+    platformVisitors,
+    platformPages,
+    platformDaily,
   ] = await Promise.all([
     d1QueryOne<{ cnt: number }>(env.DB, "SELECT COUNT(*) as cnt FROM users"),
     d1QueryOne<{ cnt: number }>(env.DB, "SELECT COUNT(*) as cnt FROM sites"),
@@ -34,6 +41,11 @@ export async function handleAdminStats(
     d1QueryOne<{ cnt: number }>(env.DB, "SELECT COUNT(*) as cnt FROM sites WHERE is_active = 1"),
     d1Query(env.DB, "SELECT id, email, name, created_at FROM users ORDER BY created_at DESC LIMIT 10"),
     d1Query(env.DB, "SELECT id, name, url, site_key, created_at FROM sites ORDER BY created_at DESC LIMIT 10"),
+    // Insightly-specific queries
+    d1QueryOne<{ cnt: number }>(env.DB, "SELECT COUNT(*) as cnt FROM page_views WHERE site_id = ?", INSIGHTLY_SITE_ID),
+    d1QueryOne<{ cnt: number }>(env.DB, "SELECT COUNT(DISTINCT visitor_id) as cnt FROM page_views WHERE site_id = ?", INSIGHTLY_SITE_ID),
+    d1Query(env.DB, "SELECT page_title, COUNT(*) as cnt FROM page_views WHERE site_id = ? GROUP BY page_title ORDER BY cnt DESC", INSIGHTLY_SITE_ID),
+    d1Query(env.DB, "SELECT DATE(timestamp) as day, COUNT(*) as cnt FROM page_views WHERE site_id = ? GROUP BY DATE(timestamp) ORDER BY day DESC LIMIT 30", INSIGHTLY_SITE_ID),
   ]);
 
   return jsonResponse(env, {
@@ -44,6 +56,12 @@ export async function handleAdminStats(
     sessions: { total: totalSessions?.cnt || 0 },
     recent_users: recentUsers,
     recent_sites: recentSites,
+    platform: {
+      page_views: platformPageViews?.cnt || 0,
+      visitors: platformVisitors?.cnt || 0,
+      pages: platformPages,
+      daily: platformDaily,
+    },
   }, 200, origin);
 }
 
