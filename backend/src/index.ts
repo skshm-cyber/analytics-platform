@@ -29,6 +29,13 @@ import {
   handleCampaigns,
   handleJourneys,
 } from "./routes/analyticsBusiness";
+import {
+  handleAdminStats,
+  handleAdminUsers,
+  handleAdminSites,
+  handleAdminActivity,
+  handleAdminSiteStats,
+} from "./routes/admin";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -100,6 +107,24 @@ export default {
       const scriptMatch = path.match(/^\/api\/sites\/([^/]+)\/script$/);
       if (scriptMatch && method === "GET") {
         return await handleGetScript(request, env, scriptMatch[1]);
+      }
+
+      // ── Admin (admin-only, JWT authenticated) ────────────────────────────
+      if (path === "/api/admin/stats" && method === "GET") {
+        return await handleAdminStats(request, env);
+      }
+      if (path === "/api/admin/users" && method === "GET") {
+        return await handleAdminUsers(request, env);
+      }
+      if (path === "/api/admin/sites" && method === "GET") {
+        return await handleAdminSites(request, env);
+      }
+      if (path === "/api/admin/activity" && method === "GET") {
+        return await handleAdminActivity(request, env);
+      }
+      const adminSiteMatch = path.match(/^\/api\/admin\/site\/([^/]+)\/stats$/);
+      if (adminSiteMatch && method === "GET") {
+        return await handleAdminSiteStats(request, env, adminSiteMatch[1]);
       }
 
       // ── Ingestion (public, site_key authenticated) ────────────────────────
@@ -192,6 +217,7 @@ export default {
         "/onboarding.html": "/onboarding.html",
         "/dashboard.html": "/dashboard.html",
         "/admin.html": "/admin.html",
+        "/admin": "/admin.html",
         "/forgot-password.html": "/forgot-password.html",
         "/reset-password.html": "/reset-password.html",
       };

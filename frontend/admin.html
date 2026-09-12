@@ -3,115 +3,351 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Insightly</title>
+  <title>Platform Admin — Insightly</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #09090b;
-      --card: rgba(255,255,255,0.03);
-      --border: rgba(255,255,255,0.06);
+      --bg: #0a0a0f;
+      --card: rgba(255,255,255,0.025);
+      --card-border: rgba(255,255,255,0.06);
       --accent: #8b5cf6;
-      --text: #fafafa;
-      --dim: #a1a1aa;
-      --muted: #52525b;
+      --accent-glow: rgba(139,92,246,0.12);
+      --teal: #06d6a0;
+      --teal-dim: rgba(6,214,160,0.12);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.12);
+      --rose: #f43f5e;
+      --rose-dim: rgba(244,63,94,0.10);
+      --blue: #3b82f6;
+      --blue-dim: rgba(59,130,246,0.12);
+      --text: #f0f0f5;
+      --text-dim: #a1a1aa;
+      --text-muted: #52525b;
+      --green: #22c55e;
+      --green-dim: rgba(34,197,94,0.10);
       --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
     }
+
     body {
-      font-family: var(--sans); background: var(--bg); color: var(--text);
-      min-height: 100vh; -webkit-font-smoothing: antialiased;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    .container { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
-    h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    .subtitle { font-size: 13px; color: var(--dim); margin-bottom: 32px; }
 
-    .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 24px; margin-bottom: 16px;
-    }
-    .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
-
-    .site-row {
+    .header {
+      position: sticky; top: 0; z-index: 50;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 0 24px; height: 56px;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(20px) saturate(1.8);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
-    .site-row:last-child { border-bottom: none; }
-    .site-name { font-weight: 500; }
-    .site-url { font-size: 12px; color: var(--dim); }
-    .site-key {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 11px; color: var(--muted);
-      background: rgba(255,255,255,0.04);
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; color: #fff;
+    }
+    .logo-text { font-weight: 600; font-size: 15px; letter-spacing: -0.02em; }
+    .admin-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--amber);
+      background: var(--amber-dim); border: 1px solid rgba(251,191,36,0.2);
       padding: 2px 8px; border-radius: 4px;
     }
-
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-right span { font-size: 13px; color: var(--text-dim); }
     .btn {
-      padding: 8px 16px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.08);
+      padding: 6px 14px; border-radius: 6px;
       background: rgba(255,255,255,0.04);
-      color: var(--text); font-family: var(--sans);
-      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-dim); font-family: var(--sans);
+      font-size: 12px; font-weight: 500; cursor: pointer;
       transition: all 0.15s;
     }
-    .btn:hover { border-color: rgba(255,255,255,0.15); }
+    .btn:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
     .btn-accent {
       background: var(--accent); border-color: var(--accent); color: #fff;
     }
     .btn-accent:hover { background: #7c3aed; }
 
-    .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-    .form-row input {
-      flex: 1; min-width: 200px;
-      padding: 8px 12px; border-radius: 8px;
+    .content { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    /* ─── Stats Grid ─── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .stat-card:hover { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-card .label {
+      font-size: 12px; color: var(--text-dim); font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+    .stat-card .value {
+      font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1;
+    }
+    .stat-card .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .stat-card.accent::before { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+    .stat-card.teal::before { background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+    .stat-card.amber::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+    .stat-card.blue::before { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+    .stat-card.rose::before { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+
+    /* ─── Section Cards ─── */
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (min-width: 900px) {
+      .section-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .section-card h2 {
+      font-size: 13px; font-weight: 600; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-card h2 .badge {
+      font-size: 11px; font-weight: 500; color: var(--text-muted);
+      background: rgba(255,255,255,0.04); padding: 2px 8px; border-radius: 4px;
+    }
+
+    /* ─── Table ─── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    th {
+      text-align: left; padding: 8px 12px; font-weight: 500;
+      color: var(--text-dim); border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    td {
+      padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+      color: var(--text-dim);
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    td:first-child { color: var(--text); font-weight: 500; }
+    .text-mono { font-family: var(--mono); font-size: 11px; }
+    .text-right { text-align: right; }
+    .tag {
+      display: inline-block; padding: 2px 6px; border-radius: 4px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+    }
+    .tag-admin { background: var(--amber-dim); color: var(--amber); }
+    .tag-user { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+    .tag-active { background: var(--green-dim); color: var(--green); }
+    .tag-inactive { background: rgba(255,255,255,0.04); color: var(--text-muted); }
+
+    .empty { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
+
+    /* ─── Activity Feed ─── */
+    .activity-feed { max-height: 400px; overflow-y: auto; }
+    .activity-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 12px;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-badge {
+      display: inline-block; padding: 2px 6px; border-radius: 4px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.3px; flex-shrink: 0;
+    }
+    .activity-badge.click { background: var(--accent-glow); color: var(--accent); }
+    .activity-badge.view { background: var(--teal-dim); color: var(--teal); }
+    .activity-badge.leave { background: var(--rose-dim); color: var(--rose); }
+    .activity-badge.other { background: rgba(161,161,170,0.1); color: var(--text-dim); }
+    .activity-site {
+      font-size: 10px; color: var(--text-muted);
+      background: rgba(255,255,255,0.04); padding: 2px 6px;
+      border-radius: 3px; flex-shrink: 0;
+    }
+    .activity-page { flex: 1; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-time { flex-shrink: 0; font-size: 11px; color: var(--text-muted); }
+
+    /* ─── Login Screen ─── */
+    .login-wrap {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 24px;
+    }
+    .login-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 16px; padding: 40px; width: 100%; max-width: 400px;
+    }
+    .login-card h1 {
+      font-size: 20px; font-weight: 700; margin-bottom: 4px; text-align: center;
+    }
+    .login-card .subtitle {
+      font-size: 13px; color: var(--text-dim); text-align: center; margin-bottom: 28px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 12px; font-weight: 500; color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%; padding: 10px 14px; border-radius: 8px;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       color: var(--text); font-family: var(--sans); font-size: 13px;
-      outline: none;
+      outline: none; transition: border-color 0.15s;
     }
-    .form-row input:focus { border-color: var(--accent); }
-
-    .msg { font-size: 13px; padding: 8px 12px; border-radius: 6px; margin-top: 8px; }
-    .msg-ok { background: rgba(34,197,94,0.1); color: #22c55e; }
-    .msg-err { background: rgba(239,68,68,0.1); color: #ef4444; }
-
-    .empty { color: var(--muted); font-size: 13px; padding: 16px 0; }
-
-    .user-info { font-size: 13px; color: var(--dim); margin-bottom: 24px; }
-    .user-info strong { color: var(--text); }
+    .form-group input:focus { border-color: var(--accent); }
+    .form-error {
+      font-size: 12px; color: var(--rose); margin-top: 8px; display: none;
+    }
+    .btn-login {
+      width: 100%; padding: 10px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      border: none; color: #fff; font-family: var(--sans);
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-login:hover { opacity: 0.9; }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Admin</h1>
-    <p class="subtitle">Manage your account and sites</p>
 
-    <div class="user-info" id="userInfo">Loading...</div>
-
-    <div class="card">
-      <h2>Your Sites</h2>
-      <div id="sitesList"><div class="empty">Loading...</div></div>
+<!-- Login Screen (shown when not authenticated) -->
+<div id="loginScreen" class="login-wrap" style="display:none">
+  <div class="login-card">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px;">
+      <div class="logo-icon" style="width:36px;height:36px;font-size:16px;">i</div>
     </div>
-
-    <div class="card">
-      <h2>Add New Site</h2>
-      <div class="form-row">
-        <input type="text" id="siteName" placeholder="Site name (e.g., My Store)">
-        <input type="url" id="siteUrl" placeholder="Website URL (https://...)">
-      </div>
-      <button class="btn btn-accent" id="addSiteBtn">Add Site</button>
-      <div id="addSiteMsg"></div>
+    <h1>Insightly Admin</h1>
+    <p class="subtitle">Platform owner access only</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@insightly.app" autocomplete="email">
     </div>
-
-    <div class="card">
-      <h2>Account</h2>
-      <div style="display:flex;gap:8px;">
-        <button class="btn" id="dashboardBtn">Open Dashboard</button>
-        <button class="btn" id="logoutBtn">Logout</button>
-      </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Enter admin password" autocomplete="current-password">
+    </div>
+    <div class="form-error" id="loginError"></div>
+    <button class="btn-login" id="loginBtn">Sign In</button>
+    <div style="text-align:center;margin-top:16px;">
+      <a href="/" style="font-size:12px;color:var(--text-muted);text-decoration:none;">← Back to Insightly</a>
     </div>
   </div>
+</div>
+
+<!-- Admin Dashboard (shown when authenticated) -->
+<div id="adminDashboard" style="display:none">
+  <header class="header">
+    <div class="header-left">
+      <a href="/" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px;">
+        <div class="logo-icon">i</div>
+        <span class="logo-text">insightly</span>
+      </a>
+      <span class="admin-badge">Platform Admin</span>
+    </div>
+    <div class="header-right">
+      <span id="adminName"></span>
+      <button class="btn" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <!-- Platform Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card accent">
+        <div class="label">Total Users</div>
+        <div class="value" id="statUsers">—</div>
+        <div class="sub">registered accounts</div>
+      </div>
+      <div class="stat-card teal">
+        <div class="label">Total Sites</div>
+        <div class="value" id="statSites">—</div>
+        <div class="sub">websites tracked</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="label">Total Page Views</div>
+        <div class="value" id="statPageViews">—</div>
+        <div class="sub">all time</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="label">Total Events</div>
+        <div class="value" id="statEvents">—</div>
+        <div class="sub">interactions tracked</div>
+      </div>
+    </div>
+
+    <div class="section-grid">
+      <!-- Users Table -->
+      <div class="section-card">
+        <h2>Users <span class="badge" id="usersBadge"></span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Email</th><th>Name</th><th>Role</th><th>Joined</th></tr>
+            </thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+          <div class="empty" id="usersEmpty">No users yet</div>
+        </div>
+      </div>
+
+      <!-- Sites Table -->
+      <div class="section-card">
+        <h2>Sites <span class="badge" id="sitesBadge"></span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Site</th><th>Owner</th><th>Status</th><th>Created</th></tr>
+            </thead>
+            <tbody id="sitesTable"></tbody>
+          </table>
+          <div class="empty" id="sitesEmpty">No sites yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <h2>Recent Platform Activity <span class="badge" id="activityBadge"></span></h2>
+      <div class="activity-feed" id="activityFeed">
+        <div class="empty" id="activityEmpty">Loading...</div>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script>
 var API = window.location.origin;
@@ -123,53 +359,163 @@ function api(path, opts) {
   });
 }
 
-function loadUser() {
-  api('/api/auth/me').then(function(user) {
-    document.getElementById('userInfo').innerHTML = 'Logged in as <strong>' + (user.name || user.email) + '</strong> (' + user.email + ')';
-    loadSites();
-  }).catch(function() { window.location.href = '/login.html'; });
+function fmt(n) {
+  if (n == null) return '0';
+  return Number(n).toLocaleString('en-US');
 }
 
-function loadSites() {
-  api('/api/sites').then(function(data) {
-    var sites = data.sites || [];
-    var el = document.getElementById('sitesList');
-    if (sites.length === 0) { el.innerHTML = '<div class="empty">No sites yet. Add one above.</div>'; return; }
-    el.innerHTML = '';
-    sites.forEach(function(s) {
-      var row = document.createElement('div');
-      row.className = 'site-row';
-      row.innerHTML = '<div><div class="site-name">' + s.name + '</div>'
-        + '<div class="site-url">' + s.url + '</div></div>'
-        + '<div class="site-key">' + s.site_key.substring(0, 12) + '…</div>';
-      el.appendChild(row);
+function timeAgo(iso) {
+  if (!iso) return '';
+  var diff = Date.now() - new Date(iso).getTime();
+  var sec = Math.floor(diff / 1000);
+  if (sec < 60) return sec + 's ago';
+  var min = Math.floor(sec / 60);
+  if (min < 60) return min + 'm ago';
+  var hr = Math.floor(min / 60);
+  if (hr < 24) return hr + 'h ago';
+  return Math.floor(hr / 24) + 'd ago';
+}
+
+function shortDate(iso) {
+  if (!iso) return '—';
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ─── Login ───
+var loginScreen = document.getElementById('loginScreen');
+var dashboard = document.getElementById('adminDashboard');
+
+document.getElementById('loginBtn').addEventListener('click', function() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPassword').value;
+  var err = document.getElementById('loginError');
+  var btn = document.getElementById('loginBtn');
+  if (!email || !pass) { err.textContent = 'Email and password required'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  err.style.display = 'none';
+  fetch(API + '/api/auth/login', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, password: pass })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    if (d.error) { err.textContent = d.error; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+    if (!d.is_admin) { err.textContent = 'This account is not an admin'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Sign In'; return; }
+    initAdmin(d);
+  }).catch(function(e) { err.textContent = 'Login failed'; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Sign In'; });
+});
+
+document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+// ─── Init ───
+function initAdmin(user) {
+  loginScreen.style.display = 'none';
+  dashboard.style.display = 'block';
+  document.getElementById('adminName').textContent = user.name || user.email;
+  loadAdminStats();
+}
+
+function checkAuth() {
+  api('/api/auth/me').then(function(user) {
+    if (!user.is_admin) { loginScreen.style.display = 'flex'; return; }
+    initAdmin(user);
+  }).catch(function() {
+    loginScreen.style.display = 'flex';
+  });
+}
+
+// ─── Load Data ───
+function loadAdminStats() {
+  api('/api/admin/stats').then(function(d) {
+    document.getElementById('statUsers').textContent = fmt(d.users.total);
+    document.getElementById('statSites').textContent = fmt(d.sites.total);
+    document.getElementById('statPageViews').textContent = fmt(d.page_views.total);
+    document.getElementById('statEvents').textContent = fmt(d.events.total);
+
+    // Users table
+    var tbody = document.getElementById('usersTable');
+    var empty = document.getElementById('usersEmpty');
+    var badge = document.getElementById('usersBadge');
+    var users = d.recent_users || [];
+    badge.textContent = fmt(d.users.total) + ' total';
+    if (users.length === 0) { empty.style.display = 'block'; } else {
+      empty.style.display = 'none';
+      tbody.innerHTML = '';
+      users.forEach(function(u) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + u.email + '</td>'
+          + '<td>' + (u.name || '—') + '</td>'
+          + '<td><span class="tag ' + (u.is_admin ? 'tag-admin' : 'tag-user') + '">' + (u.is_admin ? 'Admin' : 'User') + '</span></td>'
+          + '<td>' + shortDate(u.created_at) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Sites table
+    var sbody = document.getElementById('sitesTable');
+    var sempty = document.getElementById('sitesEmpty');
+    var sbadge = document.getElementById('sitesBadge');
+    var sites = d.recent_sites || [];
+    sbadge.textContent = fmt(d.sites.total) + ' total';
+    if (sites.length === 0) { sempty.style.display = 'block'; } else {
+      sempty.style.display = 'none';
+      sbody.innerHTML = '';
+      sites.forEach(function(s) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td><div style="font-weight:500;">' + s.name + '</div><div style="font-size:11px;color:var(--text-muted);">' + (s.url || '') + '</div></td>'
+          + '<td class="text-mono">' + s.site_key.substring(0, 10) + '…</td>'
+          + '<td><span class="tag tag-active">Active</span></td>'
+          + '<td>' + shortDate(s.created_at) + '</td>';
+        sbody.appendChild(tr);
+      });
+    }
+  }).catch(function(e) {
+    console.error('Failed to load admin stats:', e);
+  });
+
+  // Activity
+  api('/api/admin/activity?limit=30').then(function(d) {
+    var feed = document.getElementById('activityFeed');
+    var empty = document.getElementById('activityEmpty');
+    var badge = document.getElementById('activityBadge');
+    var events = d.events || [];
+    var pageViews = d.page_views || [];
+    var all = events.concat(pageViews).sort(function(a, b) {
+      return new Date(b.timestamp) - new Date(a.timestamp);
+    }).slice(0, 30);
+    badge.textContent = all.length + ' events';
+    if (all.length === 0) { empty.textContent = 'No activity yet'; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    feed.innerHTML = '';
+    all.forEach(function(ev) {
+      var type = ev.event_type || 'page_view';
+      var cls = 'other';
+      if (type.indexOf('click') !== -1 || type.indexOf('cta') !== -1) cls = 'click';
+      else if (type.indexOf('view') !== -1) cls = 'view';
+      else if (type.indexOf('leave') !== -1 || type === 'page_leave') cls = 'leave';
+      var el = document.createElement('div');
+      el.className = 'activity-item';
+      var shortPage = (ev.page_url || '').replace(/^https?:\/\/[^/]+/, '').substring(0, 25);
+      var siteName = ev.site_name || 'Unknown';
+      el.innerHTML = '<span class="activity-badge ' + cls + '">' + type.replace('_', ' ') + '</span>'
+        + '<span class="activity-site">' + siteName.substring(0, 15) + '</span>'
+        + '<span class="activity-page">' + shortPage + '</span>'
+        + '<span class="activity-time">' + timeAgo(ev.timestamp) + '</span>';
+      feed.appendChild(el);
     });
   });
 }
 
-document.getElementById('addSiteBtn').addEventListener('click', function() {
-  var name = document.getElementById('siteName').value.trim();
-  var url = document.getElementById('siteUrl').value.trim();
-  var msg = document.getElementById('addSiteMsg');
-  if (!name || !url) { msg.className = 'msg msg-err'; msg.textContent = 'Name and URL required'; return; }
-  api('/api/sites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, url: url }) })
-    .then(function(d) {
-      if (d.error) { msg.className = 'msg msg-err'; msg.textContent = d.error; return; }
-      msg.className = 'msg msg-ok'; msg.textContent = 'Site added! Site key: ' + d.site_key;
-      document.getElementById('siteName').value = '';
-      document.getElementById('siteUrl').value = '';
-      loadSites();
-    })
-    .catch(function(e) { msg.className = 'msg msg-err'; msg.textContent = 'Error: ' + e.message; });
-});
-
-document.getElementById('dashboardBtn').addEventListener('click', function() { window.location.href = '/dashboard.html'; });
+// ─── Logout ───
 document.getElementById('logoutBtn').addEventListener('click', function() {
   fetch(API + '/api/auth/logout', { method: 'POST', credentials: 'include' })
     .then(function() { window.location.href = '/login.html'; });
 });
 
-loadUser();
+// ─── Start ───
+checkAuth();
 </script>
 </body>
 </html>
