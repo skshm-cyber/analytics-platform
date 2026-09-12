@@ -407,7 +407,7 @@ export async function handleEvents(
       site_id, start, end, limit
     ),
     d1Query(env.DB,
-      "SELECT id, timestamp, page_url, visitor_id FROM page_views WHERE site_id = ? AND timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC LIMIT ?",
+      "SELECT id, timestamp, page_url, visitor_id, 'page_view' as event_type, page_title as event_target, '' as browser, '' as os, '' as device_type, '{}' as properties FROM page_views WHERE site_id = ? AND timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC LIMIT ?",
       site_id, start, end, limit
     ),
   ]);
@@ -574,20 +574,24 @@ export async function handleVerify(
 
   const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
   const oneDayAgo = new Date(Date.now() - 86400_000).toISOString();
-  const allTime = "2000-01-01T00:00:00Z";
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
 
-  const [recentPV, dayPV, totalPV, recentEvents, site] = await Promise.all([
+  const [recentPV, dayPV, weekPV, totalPV, recentEvents, recentEventCount, site] = await Promise.all([
     d1Query(env.DB, "SELECT id FROM page_views WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneHourAgo),
     d1Query(env.DB, "SELECT id FROM page_views WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneDayAgo),
+    d1Query(env.DB, "SELECT id FROM page_views WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, sevenDaysAgo),
     d1Query(env.DB, "SELECT COUNT(*) as cnt FROM page_views WHERE site_id = ?", site_id),
     d1Query(env.DB, "SELECT id FROM events WHERE site_id = ? AND timestamp >= ? LIMIT 1", site_id, oneHourAgo),
+    d1Query(env.DB, "SELECT COUNT(*) as cnt FROM events WHERE site_id = ? AND timestamp >= ?", site_id, oneDayAgo),
     d1QueryOne<{ site_key: string; url: string; name: string }>(env.DB, "SELECT site_key, url, name FROM sites WHERE id = ?", site_id),
   ]);
 
   const hasRecent = recentPV.length > 0;
   const hasToday = dayPV.length > 0;
+  const hasThisWeek = weekPV.length > 0;
   const totalCount = (totalPV[0] as any)?.cnt || 0;
   const hasRecentEvent = recentEvents.length > 0;
+  const eventCountToday = (recentEventCount[0] as any)?.cnt || 0;
 
   let status: string;
   let detail: string;
@@ -595,20 +599,24 @@ export async function handleVerify(
     status = "active";
     detail = "Tracker is working! Data received in the last hour.";
   } else if (hasToday) {
+    status = "active";
+    detail = "Tracker is working. Data received today." + (eventCountToday > 0 ? ` ${eventCountToday} events in the last 24h.` : "");
+  } else if (hasThisWeek) {
     status = "idle";
-    detail = "Tracker received data today but nothing in the last hour.";
+    detail = "Tracker received data this week but nothing today. This is normal for low-traffic sites.";
   } else if (totalCount > 0) {
     status = "stale";
-    detail = "Tracker has historical data but nothing recently. Check if the script is still installed.";
+    detail = "Tracker has historical data but nothing in the last 7 days. Verify the script is still on your site.";
   } else {
     status = "no_data";
-    detail = "No data received yet. Make sure the tracking script is installed on your website.";
+    detail = "No data received yet. Paste the script below into your website's <head> section.";
   }
 
   return jsonResponse(env, {
     status,
     detail,
     total_page_views: totalCount,
+    events_today: eventCountToday,
     has_recent_event: hasRecentEvent,
     site: site ? { name: site.name, url: site.url, site_key: site.site_key } : null,
   }, 200, origin);
